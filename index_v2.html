@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Info Form (Improved)</title>
+  <style>
+    :root{--card-bg:#fff;--page-bg:#f3f6fb;--accent:#0b76ff}
+    body{font-family:Inter,system-ui,Arial,sans-serif;background:var(--page-bg);margin:0;padding:32px;display:flex;justify-content:center}
+    .card{width:100%;max-width:720px;background:var(--card-bg);border-radius:12px;padding:22px;box-shadow:0 8px 30px rgba(8,31,63,0.08)}
+    h1{margin:0 0 14px;font-size:20px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    label{font-size:13px;color:#333;font-weight:600;margin-bottom:6px;display:block}
+    input,select,textarea{width:100%;padding:10px;border:1px solid #d7dee9;border-radius:8px;box-sizing:border-box;font-size:14px}
+    textarea{resize:vertical}
+    .full{grid-column:1/3}
+    .actions{display:flex;gap:10px;margin-top:12px}
+    button{background:var(--accent);color:#fff;padding:10px 14px;border-radius:8px;border:none;cursor:pointer;font-weight:600}
+    button.secondary{background:#e6eefc;color:#0b76ff}
+    .small{font-size:13px;padding:8px 10px}
+    .note{font-size:12px;color:#666;margin-top:8px}
+    .preview{display:flex;gap:10px;align-items:center}
+    .preview img{width:72px;height:72px;border-radius:8px;object-fit:cover;border:1px solid #ddd}
+    table{width:100%;border-collapse:collapse;margin-top:14px}
+    th,td{padding:8px;border:1px solid #eef3fb;font-size:13px;text-align:left}
+    .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    @media(max-width:700px){.grid{grid-template-columns:1fr}.full{grid-column:auto}}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Simple Info Form — Improved</h1>
+    <form id="form">
+      <div class="grid">
+        <div>
+          <label for="name">Full name</label>
+          <input id="name" name="name" type="text" placeholder="e.g. Azhan Ahmad" required>
+        </div>
+
+        <div>
+          <label for="phone">Mobile number</label>
+          <input id="phone" name="phone" type="tel" placeholder="+91 98765 43210" pattern="\+?\d{10,15}" required>
+        </div>
+
+        <div>
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" placeholder="example@mail.com" required>
+        </div>
+
+        <div>
+          <label for="age">Age</label>
+          <input id="age" name="age" type="number" min="1" max="120" placeholder="Your age" required>
+        </div>
+
+        <div>
+          <label for="dob">Date of birth</label>
+          <input id="dob" name="dob" type="date" required>
+        </div>
+
+        <div>
+          <label>Gender</label>
+          <div style="display:flex;gap:8px">
+            <label style="font-weight:500"><input type="radio" name="gender" value="Male" required> Male</label>
+            <label style="font-weight:500"><input type="radio" name="gender" value="Female"> Female</label>
+            <label style="font-weight:500"><input type="radio" name="gender" value="Other"> Other</label>
+          </div>
+        </div>
+
+        <div class="full">
+          <label for="address">Address</label>
+          <textarea id="address" name="address" rows="3" placeholder="Street, city, state, PIN" required></textarea>
+        </div>
+
+        <div>
+          <label for="state">State (select)</label>
+          <select id="state" name="state" required>
+            <option value="">-- choose state --</option>
+            <option>Delhi</option><option>Madhya Pradesh</option><option>Maharashtra</option><option>Uttar Pradesh</option><option>Bihar</option>
+            <option>Other</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="resume">Upload photo (optional)</label>
+          <input id="resume" name="resume" type="file" accept="image/*">
+          <div class="preview" id="preview" style="margin-top:8px;display:none">
+            <img id="previewImg" alt="preview">
+            <div style="font-size:13px;color:#555">Uploaded photo preview</div>
+          </div>
+        </div>
+
+        <div class="full">
+          <label for="note">Any notes (optional)</label>
+          <textarea id="note" name="note" rows="2" placeholder="Extra information..."></textarea>
+        </div>
+
+        <div class="full">
+          <label><input id="consent" type="checkbox" required> I confirm that the above information is correct.</label>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="submit" id="submitBtn">Submit</button>
+        <button type="button" id="resetBtn" class="secondary small">Reset</button>
+        <button type="button" id="downloadCsv" class="secondary small">Download submissions (CSV)</button>
+        <button type="button" id="clearAll" class="secondary small">Clear saved data</button>
+      </div>
+
+      <p class="note">Saved locally in your browser. To share results with someone, download the CSV or host the page and add server code.</p>
+    </form>
+
+    <div id="submissionsArea">
+      <h3 style="margin-top:18px;margin-bottom:8px">Recent submissions</h3>
+      <div class="controls">
+        <button id="showLocal" class="small secondary">Show last saved</button>
+      </div>
+      <table id="table" style="display:none">
+        <thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Age</th><th>DOB</th><th>Gender</th><th>State</th></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+<script>
+  const form = document.getElementById('form');
+  const preview = document.getElementById('preview');
+  const previewImg = document.getElementById('previewImg');
+  const resumeInput = document.getElementById('resume');
+  const submitBtn = document.getElementById('submitBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const downloadCsv = document.getElementById('downloadCsv');
+  const clearAll = document.getElementById('clearAll');
+  const showLocal = document.getElementById('showLocal');
+  const table = document.getElementById('table');
+  const tbody = document.getElementById('tbody');
+
+  // Load saved submissions (array) from localStorage
+  function loadSubmissions(){ 
+    try{
+      return JSON.parse(localStorage.getItem('submissions')||'[]');
+    } catch(e){ return []; }
+  }
+  function saveSubmissions(arr){ localStorage.setItem('submissions', JSON.stringify(arr)); }
+
+  resumeInput.addEventListener('change', (e)=>{
+    const file = e.target.files && e.target.files[0];
+    if(!file){ preview.style.display='none'; return; }
+    const url = URL.createObjectURL(file);
+    previewImg.src = url;
+    preview.style.display = 'flex';
+  });
+
+  form.addEventListener('submit', (ev)=>{
+    ev.preventDefault();
+    const fd = new FormData(form);
+    const data = {
+      name: fd.get('name'),
+      phone: fd.get('phone'),
+      email: fd.get('email'),
+      age: fd.get('age'),
+      dob: fd.get('dob'),
+      gender: fd.get('gender'),
+      address: fd.get('address'),
+      state: fd.get('state'),
+      note: fd.get('note'),
+      time: new Date().toISOString()
+    };
+    // Save
+    const arr = loadSubmissions();
+    arr.unshift(data); // latest first
+    saveSubmissions(arr.slice(0,200)); // keep at most 200
+    alert('Submitted! Data saved in your browser.');
+    renderTable();
+    form.reset();
+    preview.style.display='none';
+  });
+
+  resetBtn.addEventListener('click', ()=>{ if(confirm('Reset the form?')) form.reset(); preview.style.display='none'; });
+
+  clearAll.addEventListener('click', ()=>{
+    if(confirm('Clear all saved submissions from this browser?')){ localStorage.removeItem('submissions'); renderTable(); alert('Cleared.'); }
+  });
+
+  showLocal.addEventListener('click', renderTable);
+
+  function renderTable(){
+    const arr = loadSubmissions();
+    tbody.innerHTML = '';
+    if(arr.length===0){ table.style.display='none'; alert('No saved submissions yet.'); return; }
+    table.style.display='table';
+    arr.forEach(item => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${escapeHtml(item.name)}</td><td>${escapeHtml(item.phone)}</td><td>${escapeHtml(item.email)}</td><td>${escapeHtml(item.age)}</td><td>${escapeHtml(item.dob)}</td><td>${escapeHtml(item.gender||'')}</td><td>${escapeHtml(item.state||'')}</td>`;
+      tbody.appendChild(tr);
+    });
+  }
+
+  downloadCsv.addEventListener('click', ()=>{
+    const arr = loadSubmissions();
+    if(arr.length===0){ alert('No submissions to download.'); return; }
+    const headers = ['name','phone','email','age','dob','gender','state','address','note','time'];
+    const rows = arr.map(r => headers.map(h => `"${(r[h]||'').toString().replace(/"/g,'""')}"`).join(','));
+    const csv = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'submissions.csv'; document.body.appendChild(a); a.click();
+    setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 1000);
+  });
+
+  function escapeHtml(s){ return (s||'').toString().replace(/[&<>"']/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; }); }
+
+  // Show on load if exists
+  document.addEventListener('DOMContentLoaded', ()=>{ if(loadSubmissions().length) renderTable(); });
+</script>
+</body>
+</html>
